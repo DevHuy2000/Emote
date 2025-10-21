@@ -1,4 +1,4 @@
-# By AbdeeLkarim BesTo
+# By Jnl Codex
 
 import requests , json , binascii , time , urllib3 , base64 , datetime , re ,socket , threading , random , os , asyncio
 from protobuf_decoder.protobuf_decoder import Parser
@@ -220,7 +220,7 @@ async def FS(K,V):
 
 
 #EMOTES BY PARAHEX X CODEX
-async def Emote_k(TarGeT , idT, K, V):
+async def Emote_k(TarGeT , idT, K, V,region):
     fields = {
         1: 21,
         2: {
@@ -232,7 +232,13 @@ async def Emote_k(TarGeT , idT, K, V):
             }
         }
     }
-    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , '0515' , K , V)
+    if region.lower() == "ind":
+        packet = '0514'
+    elif region.lower() == "bd":
+        packet = "0519"
+    else:
+        packet = "0515"
+    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , packet , K , V)
 
 #EMOTES BY PARAHEX X CODEX
 
@@ -321,17 +327,40 @@ async def GeneRaTePk(Pk , N , K , V):
     elif len(_) == 5: HeadEr = N + "000"
     else: print('ErroR => GeneRatinG ThE PacKeT !! ')
     return bytes.fromhex(HeadEr + _ + PkEnc)
-async def OpEnSq(K , V):
+async def OpEnSq(K , V,region):
     fields = {1: 1, 2: {2: "\u0001", 3: 1, 4: 1, 5: "en", 9: 1, 11: 1, 13: 1, 14: {2: 5756, 6: 11, 8: "1.111.5", 9: 2, 10: 4}}}
-    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , '0515' , K , V) 
+    if region.lower() == "ind":
+        packet = '0514'
+    elif region.lower() == "bd":
+        packet = "0519"
+    else:
+        packet = "0515"
+    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , packet , K , V)
 
-async def cHSq(Nu , Uid , K , V):
+async def cHSq(Nu , Uid , K , V,region):
     fields = {1: 17, 2: {1: int(Uid), 2: 1, 3: int(Nu - 1), 4: 62, 5: "\u001a", 8: 5, 13: 329}}
-    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , '0515' , K , V) 
+    if region.lower() == "ind":
+        packet = '0514'
+    elif region.lower() == "bd":
+        packet = "0519"
+    else:
+        packet = "0515"
+    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , packet , K , V)
 
-async def SEnd_InV(Nu , Uid , K , V):
-    fields = {1: 2 , 2: {1: int(Uid) , 2: "IND" , 4: int(Nu)}}
-    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , '0515' , K , V) 
+
+
+async def SEnd_InV(Nu , Uid , K , V,region):
+    
+    fields = {1: 2 , 2: {1: int(Uid) , 2: region , 4: int(Nu)}}
+
+    if region.lower() == "ind":
+        packet = '0514'
+    elif region.lower() == "bd":
+        packet = "0519"
+    else:
+        packet = "0515"
+    return await GeneRaTePk((await CrEaTe_ProTo(fields)).hex() , packet , K , V)
+
     
 async def ExiT(idT , K , V):
     fields = {
