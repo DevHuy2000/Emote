@@ -7,3 +7,4 @@ pytz
 protobuf
 pycryptodome
 cfonts
+protobuf_decoder
