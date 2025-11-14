@@ -500,6 +500,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
     
 async def MaiiiinE():
+    global loop, key, iv, region
     Uid , Pw = '4280883143','BY_PARAHEX-G4AIEM1KN-REDZED'
     
 
