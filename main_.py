@@ -462,7 +462,7 @@ async def perform_emote(team_code: str, uids: list, emote_id: int):
 def join_team():
     global loop
     team_code = request.args.get('tc')
-    uid1 = request.args.get('uid')
+    uid1 = request.args.get('uid1')
     uid2 = request.args.get('uid2')
     uid3 = request.args.get('uid3')
     uid4 = request.args.get('uid4')
