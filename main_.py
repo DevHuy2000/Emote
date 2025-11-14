@@ -521,6 +521,7 @@ async def MaiiiinE():
     key = MajoRLoGinauTh.key
     iv = MajoRLoGinauTh.iv
     timestamp = MajoRLoGinauTh.timestamp
+    loop = asyncio.get_running_loop()
     
     LoGinDaTa = await GetLoginData(UrL , PyL , ToKen)
     if not LoGinDaTa: print("ErroR - GeTinG PorTs From LoGin DaTa !") ; return None
