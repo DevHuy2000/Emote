@@ -6,7 +6,7 @@ from datetime import datetime
 from google.protobuf.timestamp_pb2 import Timestamp
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
-import DEcwHisPErMsG_pb2 , MajoRLoGinrEs_pb2 , PorTs_pb2 , MajoRLoGinrEq_pb2 , sQ_pb2 , Team_msg_pb2
+from Pb2 import DEcwHisPErMsG_pb2 , MajoRLoGinrEs_pb2 , PorTs_pb2 , MajoRLoGinrEq_pb2 , sQ_pb2 , Team_msg_pb2
 from cfonts import render, say
 
 
@@ -438,70 +438,83 @@ async def TcPChaT(ip, port, AutHToKen, key, iv, LoGinDaTaUncRypTinG, ready_event
 # Flask Route
 loop = None
 async def perform_emote(team_code: str, uids: list, emote_id: int):
-    global key, iv, region, online_writer
-    if online_writer is None:
-        raise Exception("Bot not connected")
+    global key, iv, region, online_writer, whisper_writer
+    if online_writer is None or whisper_writer is None:
+        raise Exception("TCP connections not ready")
+
     try:
-        # Join the squad
+        # 1. Join squad
         EM = await GenJoinSquadsPacket(team_code, key, iv)
-        await SEndPacKeT(None, online_writer, 'OnLine', EM)
-        await asyncio.sleep(1)
-        
-        # Perform emote on each UID sequentially
+        await SEndPacKeT(whisper_writer, online_writer, 'OnLine', EM)
+        await asyncio.sleep(1.5)
+
+        # 2. Send emote to each UID
         for uid_str in uids:
-            if uid_str:  
-                uid = int(uid_str)
+            if uid_str and uid_str.strip():
+                uid = int(uid_str.strip())
                 H = await Emote_k(uid, emote_id, key, iv, region)
-                await SEndPacKeT(None, online_writer, 'OnLine', H)
-                await asyncio.sleep(0.5)
-        return {"status": "success", "message": "Emote performed successfully!"}
+                await SEndPacKeT(whisper_writer, online_writer, 'OnLine', H)
+                await asyncio.sleep(0.6)
+
+        # 3. Exit squad — QUAN TRỌNG!
+        exit_pkt = await ExiT(None, key, iv)
+        await SEndPacKeT(whisper_writer, online_writer, 'OnLine', exit_pkt)
+        await asyncio.sleep(0.5)
+
+        return {
+            "status": "success",
+            "message": "Emote sent and exited squad successfully!",
+            "team_code": team_code,
+            "uids": uids,
+            "emote_id": emote_id
+        }
+
     except Exception as e:
-        raise Exception(f"Failed to perform emote: {str(e)}")
+        raise Exception(f"Emote sequence failed: {str(e)}")
+
 
 @app.route('/join')
 def join_team():
     global loop
+
     team_code = request.args.get('tc')
-    uid1 = request.args.get('uid1')
+    uid1 = request.args.get('uid')
     uid2 = request.args.get('uid2')
     uid3 = request.args.get('uid3')
     uid4 = request.args.get('uid4')
     emote_id_str = request.args.get('emote_id')
 
-    # Check for required params
     if not team_code or not emote_id_str:
-        return jsonify({"status": "error", "message": "Missing required parameters: tc and emote_id"})
+        return jsonify({"status": "error", "message": "Missing required: tc and emote_id"})
 
     try:
         emote_id = int(emote_id_str)
-    except ValueError:
+    except (ValueError, TypeError):
         return jsonify({"status": "error", "message": "emote_id must be an integer"})
 
-    # Remove any empty or None UIDs
-    uids = [uid for uid in [uid1, uid2, uid3, uid4] if uid]
-
+    uids = [u for u in [uid1, uid2, uid3, uid4] if u and u.strip()]
     if not uids:
-        return jsonify({"status": "error", "message": "At least one UID must be provided"})
+        return jsonify({"status": "error", "message": "At least one valid UID is required"})
 
-    # Fire and forget async call
-    future = asyncio.run_coroutine_threadsafe(
-        perform_emote(team_code, uids, emote_id), loop
-    )
+    try:
+        # Chạy async và **chờ kết quả thực tế** (không fire-and-forget)
+        future = asyncio.run_coroutine_threadsafe(
+            perform_emote(team_code, uids, emote_id), loop
+        )
+        result = future.result(timeout=12)  # timeout sau 12 giây
+        return jsonify(result)
+    except asyncio.TimeoutError:
+        return jsonify({"status": "error", "message": "Operation timed out (12s)"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
-    return jsonify({
-        "status": "success",
-        "team_code": team_code,
-        "uids": uids,
-        "emote_id": emote_id_str,
-        "message": "Emote sending successfully!"
-    })
 
 def run_flask():
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
     
 async def MaiiiinE():
     global loop, key, iv, region
-    Uid , Pw = '4289240224','BY_PARAHEX-5PPAM8PNC-REDZED'
+    Uid , Pw = '4280883143','BY_PARAHEX-G4AIEM1KN-REDZED'
     
 
     open_id , access_token = await GeNeRaTeAccEss(Uid , Pw)
@@ -521,7 +534,6 @@ async def MaiiiinE():
     key = MajoRLoGinauTh.key
     iv = MajoRLoGinauTh.iv
     timestamp = MajoRLoGinauTh.timestamp
-    loop = asyncio.get_running_loop()
     
     LoGinDaTa = await GetLoginData(UrL , PyL , ToKen)
     if not LoGinDaTa: print("ErroR - GeTinG PorTs From LoGin DaTa !") ; return None
