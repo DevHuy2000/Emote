@@ -514,6 +514,7 @@ def run_flask():
     
 async def MaiiiinE():
     global loop, key, iv, region
+    loop = asyncio.get_running_loop()
     Uid , Pw = '4303085841','BY_PARAHEX-CEWZRGMYH-REDZED'
     
 
