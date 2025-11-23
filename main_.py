@@ -439,8 +439,11 @@ async def TcPChaT(ip, port, AutHToKen, key, iv, LoGinDaTaUncRypTinG, ready_event
 loop = None
 async def perform_emote(team_code: str, uids: list, emote_id: int):
     global key, iv, region, online_writer, whisper_writer
-    if online_writer is None or whisper_writer is None:
-        raise Exception("TCP connections not ready")
+
+    if online_writer is None:
+        raise Exception("Online connection not ready (online_writer is None)")
+    if whisper_writer is None:
+        raise Exception("Chat connection not ready (whisper_writer is None)")
 
     try:
         # 1. Join squad
@@ -456,7 +459,7 @@ async def perform_emote(team_code: str, uids: list, emote_id: int):
                 await SEndPacKeT(whisper_writer, online_writer, 'OnLine', H)
                 await asyncio.sleep(0.6)
 
-        # 3. Exit squad — QUAN TRỌNG!
+        # 3. Exit squad — BẮT BUỘC để không bị kẹt trong team
         exit_pkt = await ExiT(None, key, iv)
         await SEndPacKeT(whisper_writer, online_writer, 'OnLine', exit_pkt)
         await asyncio.sleep(0.5)
@@ -475,8 +478,23 @@ async def perform_emote(team_code: str, uids: list, emote_id: int):
 
 @app.route('/join')
 def join_team():
-    global loop
+    global loop, online_writer, whisper_writer
 
+    # Kiểm tra event loop
+    if loop is None:
+        return jsonify({
+            "status": "error",
+            "message": "Bot starting... event loop not ready yet."
+        })
+
+    # Kiểm tra kết nối TCP
+    if online_writer is None or whisper_writer is None:
+        return jsonify({
+            "status": "error",
+            "message": "Bot not fully connected yet. Please wait."
+        })
+
+    # Lấy tham số
     team_code = request.args.get('tc')
     uid1 = request.args.get('uid')
     uid2 = request.args.get('uid2')
@@ -485,33 +503,51 @@ def join_team():
     emote_id_str = request.args.get('emote_id')
 
     if not team_code or not emote_id_str:
-        return jsonify({"status": "error", "message": "Missing required: tc and emote_id"})
+        return jsonify({
+            "status": "error",
+            "message": "Missing required parameters: tc and emote_id"
+        })
 
     try:
         emote_id = int(emote_id_str)
     except (ValueError, TypeError):
-        return jsonify({"status": "error", "message": "emote_id must be an integer"})
+        return jsonify({
+            "status": "error",
+            "message": "emote_id must be an integer"
+        })
 
-    uids = [u for u in [uid1, uid2, uid3, uid4] if u and u.strip()]
+    # Lọc UID hợp lệ
+    uids = [u.strip() for u in [uid1, uid2, uid3, uid4] if u and u.strip()]
     if not uids:
-        return jsonify({"status": "error", "message": "At least one valid UID is required"})
+        return jsonify({
+            "status": "error",
+            "message": "At least one valid UID is required"
+        })
 
     try:
-        # Chạy async và **chờ kết quả thực tế** (không fire-and-forget)
+        # Gọi async trong thread an toàn và đợi kết quả
         future = asyncio.run_coroutine_threadsafe(
             perform_emote(team_code, uids, emote_id), loop
         )
-        result = future.result(timeout=12)  # timeout sau 12 giây
+        result = future.result(timeout=12)  # chờ tối đa 12 giây
         return jsonify(result)
+
     except asyncio.TimeoutError:
-        return jsonify({"status": "error", "message": "Operation timed out (12s)"})
+        return jsonify({
+            "status": "error",
+            "message": "Operation timed out (12s)"
+        })
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        })
 
 
 def run_flask():
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-    
+
+
 async def MaiiiinE():
     global loop, key, iv, region
     loop = asyncio.get_running_loop()
